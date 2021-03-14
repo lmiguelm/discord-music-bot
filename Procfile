@@ -1,1 +1,2 @@
-web: yarn dev
+build: yarn build
+web: yarn start
