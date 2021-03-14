@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -7,6 +8,7 @@ import { VideoSearchResult } from 'yt-search';
 import { Emitter } from './emitter';
 import { Play } from './commands/play';
 import { Notifyer } from './commands/notifyer';
+import { Commands } from './commands';
 
 export let QUEUE: VideoSearchResult[] = [];
 
@@ -18,31 +20,22 @@ app.on('ready', () => {
 });
 
 app.on('message', async msg => {
-
 	if(msg.author.bot || !msg.content.startsWith(process.env.PREFIX as string)) return;
-
-	const command = msg.content.split(' ')[0].trim();
-	const text = msg.content.replace(process.env.PREFIX as string, '').trim();
 
 	// EVENTS
 	Emitter.on('play-song', (video: VideoSearchResult) => Play.playSong(video, msg));
-
 	Emitter.on('current-music-playing', (video: VideoSearchResult) => Notifyer.currentMusicPlaying(video, msg));
-	Emitter.on('notify-disconnect', () => Notifyer.disconnect(msg));
-
+	Emitter.on('show-playlist', () => Notifyer.playList(msg, QUEUE));
+	Emitter.on('information', (text: string) => Notifyer.information(msg, text));
 	Emitter.on('set-queue', (newQueue: VideoSearchResult[]) => {
 		QUEUE = newQueue;
 	});
-	
-	if(command == '!play') {
-		const video = await Play.searchSong(text);
-		if(video) {
-			QUEUE.push(video);
 
-			if(QUEUE.length == 1) {
-				Emitter.emit('play-song', QUEUE[0]);
-			} 
-		}
-		return;	
+	try {		
+		const { command, text } = Commands.filter(msg.content);
+		await Commands[command as any](text, msg); 
+	} catch (e) {
+		console.log(e);
+		Emitter.emit('information', '```Não conheço este comando 😢. Para saber todos os meus comandos digite !help ```');
 	}
 });

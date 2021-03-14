@@ -26,7 +26,6 @@ export const Play = {
 				await ytld(
 					video.url,
 					{
-						highWaterMark: 1 << 25,
 						filter: 'audioonly',
 						quality: 'highestaudio'
 					}
@@ -36,21 +35,22 @@ export const Play = {
 				}
 			);
 
-			Emitter.emit('current-music-playing', video);
-      
-			// Qunando a musica acabar...
+			Emitter.emit('current-music-playing', QUEUE[0]);
+
+			// Quando a musica acabar...
 			watcher?.on('finish', () => {
 				QUEUE.shift();
 				if(QUEUE.length == 0) {
 					conn?.disconnect();
-					Emitter.emit('notify-disconnect');
+					Emitter.emit('information', '```Opa !! Não tenho mais músicas. Quando quiser ouvir mais, só me chamar. 😴😴```');
 				} else {
 					Emitter.emit('play-song', QUEUE[0]);
 				}
 				Emitter.emit('set-queue', QUEUE);
 			}); 
+
 		} catch (e) {
 			Emitter.emit('error', `Desculpe. Não consegui tocar: ${video.title}.`);
 		}
-	}
+	},
 };
